@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Verify Signing Secrets Presence (Fail Loudly)
+        id: check-secrets
+        run: |
+          MISSING=0
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::error ::Missing secret: KEYSTORE_BASE64 is required for release signing."
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ]; then
+            echo "::error ::Missing secret: KEYSTORE_PASSWORD is required for release signing."
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "::error ::Missing secret: KEY_ALIAS is required for release signing."
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "::error ::Missing secret: KEY_PASSWORD is required for release signing."
+            MISSING=1
+          fi
+          if [ "$MISSING" -eq 1 ]; then
+            echo "Failing release build because one or more signing credentials are missing."
+            exit 1
+          fi
+
+      - name: Decode Release Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > /tmp/release.keystore
+
+      - name: Run Test Suite Verification
+        run: gradle :app:testDebugUnitTest --no-daemon
+
+      - name: Build Minified Release APK & App Bundle (AAB)
+        env:
+          KEYSTORE_PATH: /tmp/release.keystore
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          gradle :app:assembleRelease :app:bundleRelease --no-daemon
+
+      - name: Clean Up Decoded Keystore
+        if: always()
+        run: rm -f /tmp/release.keystore
+
+      - name: Locate & Prepare Release Artifacts
+        run: |
+          mkdir -p release-artifacts
+          # Locate generated release APK and AAB
+          find app/build/outputs -name "*release*.apk" -exec cp {} release-artifacts/VaultKeep-${{ github.ref_name }}.apk \;
+          find app/build/outputs -name "*release*.aab" -exec cp {} release-artifacts/VaultKeep-${{ github.ref_name }}.aab \;
+
+          cd release-artifacts
+          # Compute cryptographic SHA-256 checksums
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Extract Release Notes from CHANGELOG.md
+        id: extract_changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Extracting release notes for version ${VERSION}..."
+          if [ -f "CHANGELOG.md" ]; then
+            awk "/## \[${VERSION}\]/{flag=1; next} /## \[/{flag=0} flag" CHANGELOG.md > release_notes.txt
+          fi
+          if [ ! -s release_notes.txt ]; then
+            echo "Release ${GITHUB_REF_NAME}" > release_notes.txt
+          fi
+
+      - name: Create GitHub Release & Upload Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.txt
+          draft: false
+          prerelease: false
+          files: |
+            release-artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

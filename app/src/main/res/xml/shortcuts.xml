@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shortcut_add_entry"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_entry_short"
+        android:shortcutLongLabel="@string/shortcut_add_entry_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.vaultkeep.secure"
+            android:targetClass="com.example.MainActivity"
+            android:data="vaultkeep://action/add" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="shortcut_lock_vault"
+        android:enabled="true"
+        android:icon="@drawable/ic_lock_tile"
+        android:shortcutShortLabel="@string/shortcut_lock_vault_short"
+        android:shortcutLongLabel="@string/shortcut_lock_vault_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.vaultkeep.secure"
+            android:targetClass="com.example.MainActivity"
+            android:data="vaultkeep://action/lock" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="shortcut_security_center"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_security"
+        android:shortcutShortLabel="@string/shortcut_security_center_short"
+        android:shortcutLongLabel="@string/shortcut_security_center_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.vaultkeep.secure"
+            android:targetClass="com.example.MainActivity"
+            android:data="vaultkeep://action/security" />
+    </shortcut>
+</shortcuts>

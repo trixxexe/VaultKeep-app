@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">VaultKeep</string>
+    <string name="tile_lock_vault">Lock VaultKeep</string>
+    <string name="tile_lock_vault_desc">Force lock your encrypted password vault immediately</string>
+    <string name="shortcut_add_entry_short">Add Entry</string>
+    <string name="shortcut_add_entry_long">Add a new password or passkey entry</string>
+    <string name="shortcut_lock_vault_short">Lock Vault</string>
+    <string name="shortcut_lock_vault_long">Lock your password vault immediately</string>
+    <string name="shortcut_security_center_short">Security Center</string>
+    <string name="shortcut_security_center_long">Open Vault Security Center &amp; Health Audit</string>
+</resources>

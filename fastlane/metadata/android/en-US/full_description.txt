@@ -1,0 +1,11 @@
+VaultKeep is a secure, open-source, 100% offline password manager, FIDO2/WebAuthn passkey manager, and TOTP authenticator for Android.
+
+Features:
+• Zero-Knowledge Architecture: AES-256-GCM authenticated encryption paired with Argon2id memory-hard key derivation.
+• FIDO2 / WebAuthn Passkeys: Native P-256 ECDSA passkey creation and assertion stored strictly in your encrypted vault.
+• Modern Android Integration: Integrated with Android 14+ Credential Provider service and legacy Autofill framework.
+• 2FA / TOTP Authenticator: Offline TOTP codes with live countdown timers and camera QR code scanning.
+• Hardware-Backed Biometrics: Unlock your vault quickly with biometric credentials securely wrapped in Android KeyStore.
+• Security Center & Audit: Scan your vault for weak, reused, or compromised passwords and missing 2FA.
+• Encrypted Backup & Restore: Versioned (.vkeep) backup exports protected by independent Argon2/scrypt encryption.
+• Strict Privacy: No INTERNET permission required. Zero telemetry, zero third-party trackers, zero server dependencies.

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Optional: Used strictly for user-configured WebDAV synchronization when enabled by user. Off by default. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyApplication">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- App Shortcuts -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+
+            <!-- Share-Sheet receiver: pre-fills new vault entry from shared URLs/text -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
+            <!-- Deep-linking: vaultkeep:// routes safely through unlock first -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vaultkeep" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".autofill.AutofillAuthActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MyApplication" />
+
+        <activity
+            android:name=".credentials.CredentialAuthActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MyApplication" />
+
+        <activity
+            android:name=".CrashDisplayActivity"
+            android:exported="false"
+            android:process=":crash_diagnostic"
+            android:theme="@android:style/Theme.NoTitleBar" />
+
+        <service
+            android:name=".autofill.VaultAutofillService"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.autofill"
+                android:resource="@xml/autofill_service_config" />
+        </service>
+
+        <service
+            android:name=".credentials.VaultCredentialProviderService"
+            android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.credentials.CredentialProviderService" />
+            </intent-filter>
+        </service>
+
+        <!-- Quick Settings Tile: Immediately force-locks the vault from notification shade -->
+        <service
+            android:name=".service.VaultLockTileService"
+            android:icon="@drawable/ic_lock_tile"
+            android:label="@string/tile_lock_vault"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Home Screen Security-Conscious Widget -->
+        <receiver
+            android:name=".widget.VaultKeepWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vaultkeep_widget_info" />
+        </receiver>
+    </application>
+
+</manifest>

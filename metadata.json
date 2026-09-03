@@ -1,0 +1,6 @@
+{
+  "name": "VaultKeep",
+  "description": "A fully offline, local-first password manager with AES-256-GCM authenticated encryption and hardware-backed biometric security.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
