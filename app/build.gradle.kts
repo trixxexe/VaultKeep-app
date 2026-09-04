@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Base64
 
 plugins {
   alias(libs.plugins.android.application)
@@ -24,6 +25,14 @@ android {
     versionName = appVersionName
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  val debugKeystoreFile = file("${rootDir}/debug.keystore")
+  val debugKeystoreB64File = file("${rootDir}/debug.keystore.base64")
+  if (!debugKeystoreFile.exists() && debugKeystoreB64File.exists()) {
+    try {
+      debugKeystoreFile.writeBytes(Base64.getMimeDecoder().decode(debugKeystoreB64File.readText().trim()))
+    } catch (_: Exception) {}
   }
 
   signingConfigs {
