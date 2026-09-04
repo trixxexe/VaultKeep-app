@@ -18,7 +18,8 @@ permissions:
 jobs:
   # ---------------------------------------------------------------------
   # Always runs: tests + debug build. Self-generates the debug keystore
-  # so this never depends on a committed file or a missing secret.
+  # and auto-detects whether to use ./gradlew or the system `gradle`
+  # binary, so this never depends on repo files that may not exist.
   # ---------------------------------------------------------------------
   test-and-build-debug:
     name: Test & Build Debug APK
@@ -34,13 +35,19 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Ensure gradlew is executable
-        run: chmod +x ./gradlew || true
+      - name: Detect Gradle command (wrapper vs system)
+        id: gradle-cmd
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            echo "cmd=./gradlew" >> "$GITHUB_OUTPUT"
+            echo "Using project Gradle wrapper (./gradlew)."
+          else
+            echo "cmd=gradle" >> "$GITHUB_OUTPUT"
+            echo "No ./gradlew found — falling back to system Gradle."
+          fi
 
       - name: Generate debug keystore if missing
-        # Standard Android debug keystore — same fixed, non-secret
-        # credentials Android Studio itself uses locally. No secret
-        # needed, nothing to restore from base64, nothing to commit.
         run: |
           if [ ! -f "debug.keystore" ]; then
             keytool -genkey -v \
@@ -56,7 +63,7 @@ jobs:
           fi
 
       - name: Run Unit & Robolectric Tests
-        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+        run: ${{ steps.gradle-cmd.outputs.cmd }} :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Publish Test Results
         if: always()
@@ -67,7 +74,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Assemble Debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        run: ${{ steps.gradle-cmd.outputs.cmd }} :app:assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -100,8 +107,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Ensure gradlew is executable
-        run: chmod +x ./gradlew || true
+      - name: Detect Gradle command (wrapper vs system)
+        id: gradle-cmd
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            echo "cmd=./gradlew" >> "$GITHUB_OUTPUT"
+          else
+            echo "cmd=gradle" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Verify signing secrets are present
         run: |
@@ -132,7 +146,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease :app:bundleRelease --no-daemon --stacktrace
+        run: ${{ steps.gradle-cmd.outputs.cmd }} :app:assembleRelease :app:bundleRelease --no-daemon --stacktrace
 
       - name: Clean up decoded keystore
         if: always()
