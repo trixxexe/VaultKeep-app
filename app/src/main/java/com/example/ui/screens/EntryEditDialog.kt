@@ -355,10 +355,11 @@ fun EntryEditDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = {
-                        title = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH)
+                        val cleanTitle = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH)
+                        title = cleanTitle
                         validationError = null
-                        if (selectedType == EntryType.PASSKEY && passkeyRpId.isBlank() && title.isNotBlank()) {
-                            passkeyRpId = title.trim().lowercase().replace(" ", "") + ".com"
+                        if (selectedType == EntryType.PASSKEY && passkeyRpId.isBlank() && cleanTitle.isNotBlank()) {
+                            passkeyRpId = cleanTitle.trim().lowercase().replace(" ", "") + ".com"
                         }
                     },
                     label = { Text("Title / Name *") },
