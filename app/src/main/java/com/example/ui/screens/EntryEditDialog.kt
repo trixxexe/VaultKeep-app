@@ -41,6 +41,7 @@ import com.example.data.*
 import com.example.ui.components.QrScannerDialog
 import com.example.ui.components.StrengthMeter
 import com.example.ui.theme.SecurityRed
+import com.example.ui.util.InputSanitizer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,7 +148,7 @@ fun EntryEditDialog(
                     }
                     val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
                     val newAttachment = EncryptedAttachment(
-                        fileName = fileName,
+                        fileName = InputSanitizer.sanitizeSingleLine(fileName, InputSanitizer.MAX_TITLE_LENGTH),
                         mimeType = mimeType,
                         fileSize = bytes.size.toLong(),
                         dataBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
@@ -165,12 +166,12 @@ fun EntryEditDialog(
         QrScannerDialog(
             onDismiss = { showQrScanner = false },
             onQrCodeScanned = { config ->
-                totpSecret = config.secret
+                totpSecret = InputSanitizer.sanitizeSingleLine(config.secret, 200)
                 if (title.isBlank() && config.issuer.isNotBlank()) {
-                    title = config.issuer
+                    title = InputSanitizer.sanitizeSingleLine(config.issuer, InputSanitizer.MAX_TITLE_LENGTH)
                 }
                 if (username.isBlank() && config.accountName.isNotBlank()) {
-                    username = config.accountName
+                    username = InputSanitizer.sanitizeSingleLine(config.accountName, InputSanitizer.MAX_USERNAME_LENGTH)
                 }
                 showQrScanner = false
             }
@@ -354,10 +355,10 @@ fun EntryEditDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = {
-                        title = it
+                        title = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH)
                         validationError = null
-                        if (selectedType == EntryType.PASSKEY && passkeyRpId.isBlank() && it.isNotBlank()) {
-                            passkeyRpId = it.trim().lowercase().replace(" ", "") + ".com"
+                        if (selectedType == EntryType.PASSKEY && passkeyRpId.isBlank() && title.isNotBlank()) {
+                            passkeyRpId = title.trim().lowercase().replace(" ", "") + ".com"
                         }
                     },
                     label = { Text("Title / Name *") },
@@ -384,7 +385,7 @@ fun EntryEditDialog(
                         // Username
                         OutlinedTextField(
                             value = username,
-                            onValueChange = { username = it },
+                            onValueChange = { username = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
                             label = { Text("Username or Email *") },
                             placeholder = { Text("e.g. alex@example.com") },
                             singleLine = true,
@@ -397,7 +398,10 @@ fun EntryEditDialog(
                         // Password
                         OutlinedTextField(
                             value = password,
-                            onValueChange = { password = it; validationError = null },
+                            onValueChange = {
+                                password = InputSanitizer.sanitizeText(it, InputSanitizer.MAX_PASSWORD_LENGTH)
+                                validationError = null
+                            },
                             label = { Text("Password *") },
                             placeholder = { Text("Enter or generate password") },
                             singleLine = true,
@@ -498,7 +502,7 @@ fun EntryEditDialog(
                         // URL
                         OutlinedTextField(
                             value = url,
-                            onValueChange = { url = it },
+                            onValueChange = { url = InputSanitizer.sanitizeUrl(it) },
                             label = { Text("Website URL (for Autofill)") },
                             placeholder = { Text("https://example.com/login") },
                             singleLine = true,
@@ -511,7 +515,7 @@ fun EntryEditDialog(
                         // 2FA / TOTP
                         OutlinedTextField(
                             value = totpSecret,
-                            onValueChange = { totpSecret = it.trim() },
+                            onValueChange = { totpSecret = InputSanitizer.sanitizeSingleLine(it, 200) },
                             label = { Text("2FA / TOTP Authenticator Key") },
                             placeholder = { Text("Base32 Key") },
                             singleLine = true,
@@ -528,7 +532,7 @@ fun EntryEditDialog(
                     EntryType.PASSKEY -> {
                         OutlinedTextField(
                             value = username,
-                            onValueChange = { username = it },
+                            onValueChange = { username = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
                             label = { Text("Username or Email *") },
                             placeholder = { Text("e.g. alex@example.com") },
                             singleLine = true,
@@ -540,7 +544,7 @@ fun EntryEditDialog(
 
                         OutlinedTextField(
                             value = passkeyRpId,
-                            onValueChange = { passkeyRpId = it.trim() },
+                            onValueChange = { passkeyRpId = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_URL_LENGTH) },
                             label = { Text("Relying Party Domain (RP ID) *") },
                             placeholder = { Text("e.g. github.com, google.com") },
                             singleLine = true,
@@ -558,7 +562,7 @@ fun EntryEditDialog(
                     EntryType.CREDIT_CARD -> {
                         OutlinedTextField(
                             value = cardholderName,
-                            onValueChange = { cardholderName = it },
+                            onValueChange = { cardholderName = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH) },
                             label = { Text("Cardholder Name") },
                             placeholder = { Text("Alex Smith") },
                             singleLine = true,
@@ -569,7 +573,7 @@ fun EntryEditDialog(
 
                         OutlinedTextField(
                             value = cardNumber,
-                            onValueChange = { cardNumber = it.filter { c -> c.isDigit() || c == ' ' } },
+                            onValueChange = { cardNumber = it.filter { c -> c.isDigit() || c == ' ' }.take(30) },
                             label = { Text("Card Number *") },
                             placeholder = { Text("•••• •••• •••• ••••") },
                             singleLine = true,
@@ -581,7 +585,7 @@ fun EntryEditDialog(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = cardExpiry,
-                                onValueChange = { cardExpiry = it },
+                                onValueChange = { cardExpiry = InputSanitizer.sanitizeSingleLine(it, 10) },
                                 label = { Text("Expiry (MM/YY)") },
                                 placeholder = { Text("12/28") },
                                 singleLine = true,
@@ -590,7 +594,7 @@ fun EntryEditDialog(
                             )
                             OutlinedTextField(
                                 value = cardCvv,
-                                onValueChange = { cardCvv = it },
+                                onValueChange = { cardCvv = it.filter { c -> c.isDigit() }.take(6) },
                                 label = { Text("CVV / CVC") },
                                 placeholder = { Text("•••") },
                                 singleLine = true,
@@ -609,7 +613,7 @@ fun EntryEditDialog(
                             )
                             OutlinedTextField(
                                 value = cardPin,
-                                onValueChange = { cardPin = it },
+                                onValueChange = { cardPin = it.filter { c -> c.isDigit() }.take(12) },
                                 label = { Text("PIN") },
                                 placeholder = { Text("••••") },
                                 singleLine = true,
@@ -624,7 +628,7 @@ fun EntryEditDialog(
                     EntryType.IDENTITY -> {
                         OutlinedTextField(
                             value = identityName,
-                            onValueChange = { identityName = it },
+                            onValueChange = { identityName = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH) },
                             label = { Text("Full Legal Name") },
                             placeholder = { Text("Alexander Smith") },
                             singleLine = true,
@@ -634,7 +638,7 @@ fun EntryEditDialog(
 
                         OutlinedTextField(
                             value = identityIdNumber,
-                            onValueChange = { identityIdNumber = it },
+                            onValueChange = { identityIdNumber = InputSanitizer.sanitizeSingleLine(it, 50) },
                             label = { Text("ID / Passport / SSN Number") },
                             placeholder = { Text("A12345678") },
                             singleLine = true,
@@ -644,7 +648,7 @@ fun EntryEditDialog(
 
                         OutlinedTextField(
                             value = identityAddress,
-                            onValueChange = { identityAddress = it },
+                            onValueChange = { identityAddress = InputSanitizer.sanitizeText(it, 300) },
                             label = { Text("Full Address") },
                             placeholder = { Text("123 Main St, Springfield, USA") },
                             minLines = 2,
@@ -656,7 +660,7 @@ fun EntryEditDialog(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = identityPhone,
-                                onValueChange = { identityPhone = it },
+                                onValueChange = { identityPhone = InputSanitizer.sanitizeSingleLine(it, 30) },
                                 label = { Text("Phone") },
                                 placeholder = { Text("+1 555-0199") },
                                 singleLine = true,
@@ -666,7 +670,7 @@ fun EntryEditDialog(
                             )
                             OutlinedTextField(
                                 value = identityEmail,
-                                onValueChange = { identityEmail = it },
+                                onValueChange = { identityEmail = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
                                 label = { Text("Email") },
                                 placeholder = { Text("alex@domain.com") },
                                 singleLine = true,
@@ -682,7 +686,7 @@ fun EntryEditDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = folder,
-                        onValueChange = { folder = it },
+                        onValueChange = { folder = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
                         label = { Text("Folder") },
                         placeholder = { Text("e.g. Work, Banking") },
                         singleLine = true,
@@ -692,7 +696,7 @@ fun EntryEditDialog(
 
                     OutlinedTextField(
                         value = tagInput,
-                        onValueChange = { tagInput = it },
+                        onValueChange = { tagInput = InputSanitizer.sanitizeSingleLine(it, 200) },
                         label = { Text("Tags (comma sep.)") },
                         placeholder = { Text("finance, personal") },
                         singleLine = true,
@@ -704,7 +708,7 @@ fun EntryEditDialog(
                 // Notes Input
                 OutlinedTextField(
                     value = notes,
-                    onValueChange = { notes = it },
+                    onValueChange = { notes = InputSanitizer.sanitizeText(it, InputSanitizer.MAX_NOTE_LENGTH) },
                     label = { Text(if (selectedType == EntryType.SECURE_NOTE) "Encrypted Note Body *" else "Notes (Optional)") },
                     placeholder = { Text("Encrypted at rest with AES-256-GCM...") },
                     minLines = if (selectedType == EntryType.SECURE_NOTE) 5 else 2,
@@ -821,22 +825,34 @@ fun EntryEditDialog(
 
                     Button(
                         onClick = {
-                            if (title.isBlank()) {
-                                validationError = "Please enter a title or name"
+                            val sanitizedTitle = InputSanitizer.sanitizeSingleLine(title, InputSanitizer.MAX_TITLE_LENGTH)
+                            val sanitizedUsername = InputSanitizer.sanitizeSingleLine(username, InputSanitizer.MAX_USERNAME_LENGTH)
+                            val sanitizedPassword = InputSanitizer.sanitizeText(password, InputSanitizer.MAX_PASSWORD_LENGTH)
+                            val sanitizedNotes = InputSanitizer.sanitizeText(notes, InputSanitizer.MAX_NOTE_LENGTH)
+                            val sanitizedUrl = InputSanitizer.sanitizeUrl(url)
+
+                            if (sanitizedTitle.isBlank()) {
+                                validationError = "Please enter a valid title or name"
                                 return@Button
                             }
 
-                            if (selectedType == EntryType.PASSWORD && password.isBlank()) {
+                            val urlVal = InputSanitizer.validateUrl(url)
+                            if (!urlVal.isValid) {
+                                validationError = urlVal.errorMessage ?: "Invalid URL"
+                                return@Button
+                            }
+
+                            if (selectedType == EntryType.PASSWORD && sanitizedPassword.isBlank()) {
                                 validationError = "Please enter or generate a password"
                                 return@Button
                             }
 
-                            if (selectedType == EntryType.PASSKEY && username.isBlank()) {
+                            if (selectedType == EntryType.PASSKEY && sanitizedUsername.isBlank()) {
                                 validationError = "Please enter an account username for this passkey"
                                 return@Button
                             }
 
-                            if (selectedType == EntryType.SECURE_NOTE && notes.isBlank()) {
+                            if (selectedType == EntryType.SECURE_NOTE && sanitizedNotes.isBlank()) {
                                 validationError = "Please enter text for this secure note"
                                 return@Button
                             }
@@ -846,11 +862,14 @@ fun EntryEditDialog(
                                 return@Button
                             }
 
-                            val cleanTags = tagInput.split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct()
-                            val cleanRpId = if (passkeyRpId.isNotBlank()) passkeyRpId.trim() else title.lowercase().replace(" ", "") + ".com"
+                            val cleanTags = tagInput.split(",")
+                                .map { InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TAG_LENGTH) }
+                                .filter { it.isNotBlank() }
+                                .distinct()
+                            val cleanRpId = if (passkeyRpId.isNotBlank()) InputSanitizer.sanitizeSingleLine(passkeyRpId, InputSanitizer.MAX_URL_LENGTH) else sanitizedTitle.lowercase().replace(" ", "") + ".com"
 
                             // Password history tracking
-                            val history = if (entryToEdit != null && entryToEdit.password.isNotBlank() && entryToEdit.password != password) {
+                            val history = if (entryToEdit != null && entryToEdit.password.isNotBlank() && entryToEdit.password != sanitizedPassword) {
                                 (listOf(PasswordHistoryItem(entryToEdit.password)) + entryToEdit.passwordHistory).take(5)
                             } else {
                                 entryToEdit?.passwordHistory ?: emptyList()
@@ -858,26 +877,26 @@ fun EntryEditDialog(
 
                             val newOrUpdated = if (entryToEdit != null) {
                                 entryToEdit.copy(
-                                    title = title.trim(),
-                                    username = username.trim(),
-                                    password = password,
-                                    notes = notes.trim(),
-                                    folder = folder.trim(),
+                                    title = sanitizedTitle,
+                                    username = sanitizedUsername,
+                                    password = sanitizedPassword,
+                                    notes = sanitizedNotes,
+                                    folder = InputSanitizer.sanitizeSingleLine(folder, InputSanitizer.MAX_FOLDER_LENGTH),
                                     tags = cleanTags,
                                     isFavorite = isFavorite,
-                                    totpSecret = totpSecret.trim(),
-                                    url = url.trim(),
+                                    totpSecret = InputSanitizer.sanitizeSingleLine(totpSecret, 200),
+                                    url = sanitizedUrl,
                                     entryType = selectedType,
-                                    cardholderName = cardholderName.trim(),
+                                    cardholderName = InputSanitizer.sanitizeSingleLine(cardholderName, InputSanitizer.MAX_TITLE_LENGTH),
                                     cardNumber = cardNumber.trim(),
-                                    cardExpiry = cardExpiry.trim(),
+                                    cardExpiry = InputSanitizer.sanitizeSingleLine(cardExpiry, 10),
                                     cardCvv = cardCvv.trim(),
                                     cardPin = cardPin.trim(),
-                                    identityName = identityName.trim(),
-                                    identityAddress = identityAddress.trim(),
-                                    identityIdNumber = identityIdNumber.trim(),
-                                    identityPhone = identityPhone.trim(),
-                                    identityEmail = identityEmail.trim(),
+                                    identityName = InputSanitizer.sanitizeSingleLine(identityName, InputSanitizer.MAX_TITLE_LENGTH),
+                                    identityAddress = InputSanitizer.sanitizeText(identityAddress, 300),
+                                    identityIdNumber = InputSanitizer.sanitizeSingleLine(identityIdNumber, 50),
+                                    identityPhone = InputSanitizer.sanitizeSingleLine(identityPhone, 30),
+                                    identityEmail = InputSanitizer.sanitizeSingleLine(identityEmail, InputSanitizer.MAX_USERNAME_LENGTH),
                                     customFields = customFields,
                                     passwordHistory = history,
                                     attachments = attachments,
@@ -888,16 +907,16 @@ fun EntryEditDialog(
                                 if (selectedType == EntryType.PASSKEY) {
                                     val reg = com.example.passkey.PasskeyCryptoHelper.createPasskey(
                                         rpId = cleanRpId,
-                                        userName = username.trim()
+                                        userName = sanitizedUsername
                                     )
                                     VaultEntry(
-                                        title = title.trim(),
-                                        username = username.trim(),
-                                        url = url.trim().ifBlank { if (cleanRpId.startsWith("http")) cleanRpId else "https://$cleanRpId" },
-                                        folder = folder.trim(),
+                                        title = sanitizedTitle,
+                                        username = sanitizedUsername,
+                                        url = sanitizedUrl.ifBlank { if (cleanRpId.startsWith("http")) cleanRpId else "https://$cleanRpId" },
+                                        folder = InputSanitizer.sanitizeSingleLine(folder, InputSanitizer.MAX_FOLDER_LENGTH),
                                         tags = cleanTags,
                                         isFavorite = isFavorite,
-                                        notes = notes.trim(),
+                                        notes = sanitizedNotes,
                                         entryType = EntryType.PASSKEY,
                                         customFields = customFields,
                                         attachments = attachments,
@@ -912,26 +931,26 @@ fun EntryEditDialog(
                                     )
                                 } else {
                                     VaultEntry(
-                                        title = title.trim(),
-                                        username = username.trim(),
-                                        password = password,
-                                        url = url.trim(),
-                                        folder = folder.trim(),
+                                        title = sanitizedTitle,
+                                        username = sanitizedUsername,
+                                        password = sanitizedPassword,
+                                        url = sanitizedUrl,
+                                        folder = InputSanitizer.sanitizeSingleLine(folder, InputSanitizer.MAX_FOLDER_LENGTH),
                                         tags = cleanTags,
                                         isFavorite = isFavorite,
-                                        totpSecret = totpSecret.trim(),
-                                        notes = notes.trim(),
+                                        totpSecret = InputSanitizer.sanitizeSingleLine(totpSecret, 200),
+                                        notes = sanitizedNotes,
                                         entryType = selectedType,
-                                        cardholderName = cardholderName.trim(),
+                                        cardholderName = InputSanitizer.sanitizeSingleLine(cardholderName, InputSanitizer.MAX_TITLE_LENGTH),
                                         cardNumber = cardNumber.trim(),
-                                        cardExpiry = cardExpiry.trim(),
+                                        cardExpiry = InputSanitizer.sanitizeSingleLine(cardExpiry, 10),
                                         cardCvv = cardCvv.trim(),
                                         cardPin = cardPin.trim(),
-                                        identityName = identityName.trim(),
-                                        identityAddress = identityAddress.trim(),
-                                        identityIdNumber = identityIdNumber.trim(),
-                                        identityPhone = identityPhone.trim(),
-                                        identityEmail = identityEmail.trim(),
+                                        identityName = InputSanitizer.sanitizeSingleLine(identityName, InputSanitizer.MAX_TITLE_LENGTH),
+                                        identityAddress = InputSanitizer.sanitizeText(identityAddress, 300),
+                                        identityIdNumber = InputSanitizer.sanitizeSingleLine(identityIdNumber, 50),
+                                        identityPhone = InputSanitizer.sanitizeSingleLine(identityPhone, 30),
+                                        identityEmail = InputSanitizer.sanitizeSingleLine(identityEmail, InputSanitizer.MAX_USERNAME_LENGTH),
                                         customFields = customFields,
                                         passwordHistory = emptyList(),
                                         attachments = attachments,
@@ -980,7 +999,10 @@ fun AddCustomFieldDialog(
 
                 OutlinedTextField(
                     value = label,
-                    onValueChange = { label = it; error = null },
+                    onValueChange = {
+                        label = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_CUSTOM_FIELD_LABEL_LENGTH)
+                        error = null
+                    },
                     label = { Text("Field Label") },
                     placeholder = { Text("e.g. Security Question, Server PIN") },
                     singleLine = true,
@@ -990,7 +1012,14 @@ fun AddCustomFieldDialog(
 
                 OutlinedTextField(
                     value = value,
-                    onValueChange = { value = it; error = null },
+                    onValueChange = {
+                        value = if (fieldType == CustomFieldType.PLAIN_TEXT) {
+                            InputSanitizer.sanitizeText(it, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
+                        } else {
+                            InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
+                        }
+                        error = null
+                    },
                     label = { Text("Field Value") },
                     placeholder = { Text("Secret or text value") },
                     singleLine = fieldType != CustomFieldType.PLAIN_TEXT,
@@ -1026,11 +1055,17 @@ fun AddCustomFieldDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (label.isBlank()) {
-                                error = "Please provide a label"
+                            val cleanLabel = InputSanitizer.sanitizeSingleLine(label, InputSanitizer.MAX_CUSTOM_FIELD_LABEL_LENGTH)
+                            if (cleanLabel.isBlank()) {
+                                error = "Please provide a valid label"
                                 return@Button
                             }
-                            onAddField(CustomField(label = label.trim(), value = value.trim(), fieldType = fieldType))
+                            val cleanValue = if (fieldType == CustomFieldType.PLAIN_TEXT) {
+                                InputSanitizer.sanitizeText(value, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
+                            } else {
+                                InputSanitizer.sanitizeSingleLine(value, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
+                            }
+                            onAddField(CustomField(label = cleanLabel, value = cleanValue, fieldType = fieldType))
                         },
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -1041,4 +1076,3 @@ fun AddCustomFieldDialog(
         }
     }
 }
-
