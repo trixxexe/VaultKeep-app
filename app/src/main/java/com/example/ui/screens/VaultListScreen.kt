@@ -92,7 +92,7 @@ fun VaultListScreen(
             text = {
                 OutlinedTextField(
                     value = newFolderNameInput,
-                    onValueChange = { newFolderNameInput = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
+                    onValueChange = { newFolderNameInput = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
                     placeholder = { Text("e.g. Work, Crypto, Social") },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
@@ -171,7 +171,7 @@ fun VaultListScreen(
                     if (isNewFolder) {
                         OutlinedTextField(
                             value = customFolderInput,
-                            onValueChange = { customFolderInput = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
+                            onValueChange = { customFolderInput = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
                             placeholder = { Text("New folder name") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
@@ -621,7 +621,7 @@ fun VaultListScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = {
-                            val cleanQuery = InputSanitizer.sanitizeSearchQuery(it)
+                            val cleanQuery = InputSanitizer.filterLiveSearchQuery(it)
                             viewModel.onSearchQueryChange(cleanQuery)
                         },
                         placeholder = {
