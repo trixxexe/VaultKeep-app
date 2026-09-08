@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.IntegrityCheckItem
 import com.example.data.VaultIntegrityReport
 import com.example.ui.MainViewModel
+import com.example.ui.components.SecurityAuditSkeletonLoader
 import com.example.ui.theme.SecurityEmerald
 import com.example.ui.theme.SecurityRed
 import java.text.SimpleDateFormat
@@ -95,29 +96,7 @@ fun VerifyVaultScreen(
             // Main Status Banner
             item {
                 if (isVerifying && report == null) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(36.dp)
-                            )
-                            Text(
-                                text = "Running Cryptographic Diagnostics...",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
+                    SecurityAuditSkeletonLoader()
                 } else if (report != null) {
                     IntegrityStatusCard(report = report!!)
                 }
