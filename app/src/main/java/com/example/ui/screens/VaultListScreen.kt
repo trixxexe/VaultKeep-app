@@ -48,6 +48,7 @@ import com.example.ui.theme.BadgeFgGitHub
 import com.example.ui.theme.BadgeFgPersonal
 import com.example.ui.theme.BadgeFgProton
 import com.example.ui.theme.BadgeFgSlack
+import com.example.ui.util.InputSanitizer
 import java.util.Locale
 import kotlin.math.abs
 
@@ -91,7 +92,7 @@ fun VaultListScreen(
             text = {
                 OutlinedTextField(
                     value = newFolderNameInput,
-                    onValueChange = { newFolderNameInput = it },
+                    onValueChange = { newFolderNameInput = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
                     placeholder = { Text("e.g. Work, Crypto, Social") },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
@@ -101,9 +102,10 @@ fun VaultListScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newFolderNameInput.isNotBlank()) {
-                            viewModel.addFolder(newFolderNameInput.trim())
-                            viewModel.setSelectedFolder(newFolderNameInput.trim())
+                        val cleanFolder = InputSanitizer.sanitizeSingleLine(newFolderNameInput, InputSanitizer.MAX_FOLDER_LENGTH)
+                        if (cleanFolder.isNotBlank()) {
+                            viewModel.addFolder(cleanFolder)
+                            viewModel.setSelectedFolder(cleanFolder)
                             newFolderNameInput = ""
                         }
                         showAddFolderDialog = false
@@ -169,7 +171,7 @@ fun VaultListScreen(
                     if (isNewFolder) {
                         OutlinedTextField(
                             value = customFolderInput,
-                            onValueChange = { customFolderInput = it },
+                            onValueChange = { customFolderInput = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
                             placeholder = { Text("New folder name") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
@@ -180,7 +182,7 @@ fun VaultListScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val finalFolder = if (isNewFolder) customFolderInput.trim() else targetFolder
+                        val finalFolder = if (isNewFolder) InputSanitizer.sanitizeSingleLine(customFolderInput, InputSanitizer.MAX_FOLDER_LENGTH) else targetFolder
                         if (finalFolder.isNotBlank()) {
                             viewModel.bulkMoveToFolder(selectedEntryIds, finalFolder)
                             viewModel.clearSelection()
@@ -618,7 +620,10 @@ fun VaultListScreen(
                 Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                     OutlinedTextField(
                         value = searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        onValueChange = {
+                            val cleanQuery = InputSanitizer.sanitizeSearchQuery(it)
+                            viewModel.onSearchQueryChange(cleanQuery)
+                        },
                         placeholder = {
                             Text(
                                 text = "Search logins, sites, usernames...",
@@ -1465,4 +1470,3 @@ private fun getBadgeColors(title: String): Pair<Color, Color> {
         }
     }
 }
-

@@ -15,8 +15,11 @@
 .cxx
 local.properties
 .env
+.env.local
+.env.*.local
 debug.keystore
 release.keystore
 release.keystore.base64
 RELEASE_CREDENTIALS.txt
 *.keystore
+*.jks
