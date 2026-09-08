@@ -148,7 +148,7 @@ fun EntryEditDialog(
                     }
                     val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
                     val newAttachment = EncryptedAttachment(
-                        fileName = InputSanitizer.filterLiveSingleLine(fileName, InputSanitizer.MAX_TITLE_LENGTH),
+                        fileName = InputSanitizer.sanitizeSingleLine(fileName, InputSanitizer.MAX_TITLE_LENGTH),
                         mimeType = mimeType,
                         fileSize = bytes.size.toLong(),
                         dataBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
@@ -166,12 +166,12 @@ fun EntryEditDialog(
         QrScannerDialog(
             onDismiss = { showQrScanner = false },
             onQrCodeScanned = { config ->
-                totpSecret = InputSanitizer.filterLiveSingleLine(config.secret, 200)
+                totpSecret = InputSanitizer.sanitizeSingleLine(config.secret, 200)
                 if (title.isBlank() && config.issuer.isNotBlank()) {
-                    title = InputSanitizer.filterLiveSingleLine(config.issuer, InputSanitizer.MAX_TITLE_LENGTH)
+                    title = InputSanitizer.sanitizeSingleLine(config.issuer, InputSanitizer.MAX_TITLE_LENGTH)
                 }
                 if (username.isBlank() && config.accountName.isNotBlank()) {
-                    username = InputSanitizer.filterLiveSingleLine(config.accountName, InputSanitizer.MAX_USERNAME_LENGTH)
+                    username = InputSanitizer.sanitizeSingleLine(config.accountName, InputSanitizer.MAX_USERNAME_LENGTH)
                 }
                 showQrScanner = false
             }
@@ -355,11 +355,10 @@ fun EntryEditDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = {
-                        val cleanTitle = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH)
-                        title = cleanTitle
+                        title = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH)
                         validationError = null
-                        if (selectedType == EntryType.PASSKEY && passkeyRpId.isBlank() && cleanTitle.isNotBlank()) {
-                            passkeyRpId = cleanTitle.trim().lowercase().replace(" ", "") + ".com"
+                        if (selectedType == EntryType.PASSKEY && passkeyRpId.isBlank() && title.isNotBlank()) {
+                            passkeyRpId = title.trim().lowercase().replace(" ", "") + ".com"
                         }
                     },
                     label = { Text("Title / Name *") },
@@ -386,7 +385,7 @@ fun EntryEditDialog(
                         // Username
                         OutlinedTextField(
                             value = username,
-                            onValueChange = { username = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
+                            onValueChange = { username = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
                             label = { Text("Username or Email *") },
                             placeholder = { Text("e.g. alex@example.com") },
                             singleLine = true,
@@ -503,7 +502,7 @@ fun EntryEditDialog(
                         // URL
                         OutlinedTextField(
                             value = url,
-                            onValueChange = { url = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_URL_LENGTH) },
+                            onValueChange = { url = InputSanitizer.sanitizeUrl(it) },
                             label = { Text("Website URL (for Autofill)") },
                             placeholder = { Text("https://example.com/login") },
                             singleLine = true,
@@ -516,7 +515,7 @@ fun EntryEditDialog(
                         // 2FA / TOTP
                         OutlinedTextField(
                             value = totpSecret,
-                            onValueChange = { totpSecret = InputSanitizer.filterLiveSingleLine(it, 200) },
+                            onValueChange = { totpSecret = InputSanitizer.sanitizeSingleLine(it, 200) },
                             label = { Text("2FA / TOTP Authenticator Key") },
                             placeholder = { Text("Base32 Key") },
                             singleLine = true,
@@ -533,7 +532,7 @@ fun EntryEditDialog(
                     EntryType.PASSKEY -> {
                         OutlinedTextField(
                             value = username,
-                            onValueChange = { username = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
+                            onValueChange = { username = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
                             label = { Text("Username or Email *") },
                             placeholder = { Text("e.g. alex@example.com") },
                             singleLine = true,
@@ -545,7 +544,7 @@ fun EntryEditDialog(
 
                         OutlinedTextField(
                             value = passkeyRpId,
-                            onValueChange = { passkeyRpId = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_URL_LENGTH) },
+                            onValueChange = { passkeyRpId = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_URL_LENGTH) },
                             label = { Text("Relying Party Domain (RP ID) *") },
                             placeholder = { Text("e.g. github.com, google.com") },
                             singleLine = true,
@@ -563,7 +562,7 @@ fun EntryEditDialog(
                     EntryType.CREDIT_CARD -> {
                         OutlinedTextField(
                             value = cardholderName,
-                            onValueChange = { cardholderName = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH) },
+                            onValueChange = { cardholderName = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH) },
                             label = { Text("Cardholder Name") },
                             placeholder = { Text("Alex Smith") },
                             singleLine = true,
@@ -586,7 +585,7 @@ fun EntryEditDialog(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = cardExpiry,
-                                onValueChange = { cardExpiry = InputSanitizer.filterLiveSingleLine(it, 10) },
+                                onValueChange = { cardExpiry = InputSanitizer.sanitizeSingleLine(it, 10) },
                                 label = { Text("Expiry (MM/YY)") },
                                 placeholder = { Text("12/28") },
                                 singleLine = true,
@@ -629,7 +628,7 @@ fun EntryEditDialog(
                     EntryType.IDENTITY -> {
                         OutlinedTextField(
                             value = identityName,
-                            onValueChange = { identityName = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH) },
+                            onValueChange = { identityName = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_TITLE_LENGTH) },
                             label = { Text("Full Legal Name") },
                             placeholder = { Text("Alexander Smith") },
                             singleLine = true,
@@ -639,7 +638,7 @@ fun EntryEditDialog(
 
                         OutlinedTextField(
                             value = identityIdNumber,
-                            onValueChange = { identityIdNumber = InputSanitizer.filterLiveSingleLine(it, 50) },
+                            onValueChange = { identityIdNumber = InputSanitizer.sanitizeSingleLine(it, 50) },
                             label = { Text("ID / Passport / SSN Number") },
                             placeholder = { Text("A12345678") },
                             singleLine = true,
@@ -661,7 +660,7 @@ fun EntryEditDialog(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = identityPhone,
-                                onValueChange = { identityPhone = InputSanitizer.filterLiveSingleLine(it, 30) },
+                                onValueChange = { identityPhone = InputSanitizer.sanitizeSingleLine(it, 30) },
                                 label = { Text("Phone") },
                                 placeholder = { Text("+1 555-0199") },
                                 singleLine = true,
@@ -671,7 +670,7 @@ fun EntryEditDialog(
                             )
                             OutlinedTextField(
                                 value = identityEmail,
-                                onValueChange = { identityEmail = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
+                                onValueChange = { identityEmail = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_USERNAME_LENGTH) },
                                 label = { Text("Email") },
                                 placeholder = { Text("alex@domain.com") },
                                 singleLine = true,
@@ -687,7 +686,7 @@ fun EntryEditDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = folder,
-                        onValueChange = { folder = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
+                        onValueChange = { folder = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_FOLDER_LENGTH) },
                         label = { Text("Folder") },
                         placeholder = { Text("e.g. Work, Banking") },
                         singleLine = true,
@@ -697,7 +696,7 @@ fun EntryEditDialog(
 
                     OutlinedTextField(
                         value = tagInput,
-                        onValueChange = { tagInput = InputSanitizer.filterLiveSingleLine(it, 200) },
+                        onValueChange = { tagInput = InputSanitizer.sanitizeSingleLine(it, 200) },
                         label = { Text("Tags (comma sep.)") },
                         placeholder = { Text("finance, personal") },
                         singleLine = true,
@@ -1001,7 +1000,7 @@ fun AddCustomFieldDialog(
                 OutlinedTextField(
                     value = label,
                     onValueChange = {
-                        label = InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_CUSTOM_FIELD_LABEL_LENGTH)
+                        label = InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_CUSTOM_FIELD_LABEL_LENGTH)
                         error = null
                     },
                     label = { Text("Field Label") },
@@ -1017,7 +1016,7 @@ fun AddCustomFieldDialog(
                         value = if (fieldType == CustomFieldType.PLAIN_TEXT) {
                             InputSanitizer.sanitizeText(it, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
                         } else {
-                            InputSanitizer.filterLiveSingleLine(it, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
+                            InputSanitizer.sanitizeSingleLine(it, InputSanitizer.MAX_CUSTOM_FIELD_VALUE_LENGTH)
                         }
                         error = null
                     },

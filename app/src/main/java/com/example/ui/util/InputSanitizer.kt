@@ -36,29 +36,12 @@ object InputSanitizer {
     }
 
     /**
-     * Live input filtering for single-line text fields (allows spaces during typing).
-     */
-    fun filterLiveSingleLine(input: String, maxLength: Int): String {
-        val cleaned = sanitizeText(input, maxLength)
-        return cleaned.replace("\r", "").replace("\n", "")
-    }
-
-    /**
-     * Live input filtering for search queries (allows spaces during typing).
-     */
-    fun filterLiveSearchQuery(query: String): String {
-        if (query.isEmpty()) return ""
-        val cleaned = sanitizeText(query, MAX_SEARCH_QUERY_LENGTH)
-        return HTML_TAG_REGEX.replace(cleaned, "")
-    }
-
-    /**
-     * Sanitizes user input specifically intended for search fields (final clean).
+     * Sanitizes user input specifically intended for search fields.
      */
     fun sanitizeSearchQuery(query: String): String {
         if (query.isEmpty()) return ""
-        val cleaned = filterLiveSearchQuery(query)
-        return cleaned.trim()
+        val cleaned = sanitizeText(query, MAX_SEARCH_QUERY_LENGTH)
+        return HTML_TAG_REGEX.replace(cleaned, "").trim()
     }
 
     /**
@@ -74,11 +57,11 @@ object InputSanitizer {
     }
 
     /**
-     * Sanitizes single-line fields such as titles, usernames, folders, and custom field labels (final clean on save).
+     * Sanitizes single-line fields such as titles, usernames, folders, and custom field labels.
      */
     fun sanitizeSingleLine(input: String, maxLength: Int): String {
-        val cleaned = filterLiveSingleLine(input, maxLength)
-        return cleaned.trim()
+        val cleaned = sanitizeText(input, maxLength)
+        return cleaned.replace("\r", "").replace("\n", "").trim()
     }
 
     /**
